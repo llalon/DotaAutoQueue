@@ -65,10 +65,18 @@ private:
 
     void updateLabels();
 
+    void openHomePage();
+
+    void showAbout();
+
+    void updateCheck();
+
     static const int POLL_INTERVAL_MS;
     static const QString MESSAGE_CONTENT;
     static const QString MESSAGE_ERROR;
     static const QString DOTA_WINDOW;
+    static const QString REPO_URL;
+    static const QString REPO_API_URL;
 };
 
 #endif // MAINWINDOW_H

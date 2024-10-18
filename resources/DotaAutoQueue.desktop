@@ -1,0 +1,11 @@
+[Desktop Entry]
+Comment=DotaAutoQueue
+Exec=DotaAutoQueue
+GenericName=DotaAutoQueue
+Icon=DotaAutoQueue
+Name=DotaAutoQueue
+NoDisplay=false
+StartupNotify=true
+Terminal=false
+Type=Application
+Categories=Game;

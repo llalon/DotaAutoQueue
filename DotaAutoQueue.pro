@@ -1,3 +1,4 @@
+
 QT += core gui network KWindowSystem widgets
 
 CONFIG += c++17
@@ -6,17 +7,6 @@ CONFIG += link_pkgconfig
 PKGCONFIG += opencv4
 PKGCONFIG += tesseract
 PKGCONFIG += x11 xtst
-
-# CONFIG += console debug
-
-# INCLUDEPATH += /usr/include/KF5/KWindowSystem
-# LIBS += -lKF5WindowSystem
-# INCLUDEPATH += /usr/include/X11
-# LIBS += -lX11 -lXtst
-
-# You can make your code fail to compile if it uses deprecated APIs.
-# In order to do so, uncomment the following line.
-#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SRC_DIR = src
 
@@ -30,7 +20,27 @@ HEADERS += \
 FORMS += \
     $$SRC_DIR/mainwindow.ui
 
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+isEmpty(PREFIX) {
+    PREFIX = /usr/local
+}
+
+target.path = $$PREFIX/bin
+INSTALLS += target
+
+desktop.path  = $$PREFIX/share/applications
+desktop.files = resources/DotaAutoQueue.desktop
+icons.path    = $$PREFIX/share/icons/hicolor/48x48/apps/
+icons.files   = resources/DotaAutoQueue.png
+INSTALLS     += desktop icons
+
+OBJECTS_DIR = target/obj
+MOC_DIR = target/moc
+RCC_DIR = target/rcc
+UI_DIR = target/ui
+TARGET = target/DotaAutoQueue
+
+GIT_HASH = $$system(git rev-parse --short HEAD)
+DEFINES += GIT_HASH=\\\"$$GIT_HASH\\\"
+
+RESOURCES += \
+    resources.qrc

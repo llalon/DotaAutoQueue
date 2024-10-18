@@ -21,6 +21,7 @@
 #include <QRect>
 #include <QPixmap>
 #include <QWindow>
+#include <QDesktopServices>
 
 #include <KX11Extras>
 #include <X11/Xlib.h>
@@ -36,7 +37,9 @@
 
 #include <tesseract/baseapi.h>
 
-const QString MainWindow::DOTA_WINDOW = "Dota";
+const QString MainWindow::REPO_API_URL = "https://api.github.com/repos/llalon/DotaAutoQueue/branches/main";
+const QString MainWindow::REPO_URL = "https://github.com/llalon/DotaAutoQueue";
+const QString MainWindow::DOTA_WINDOW = "Dota 2";
 const int MainWindow::POLL_INTERVAL_MS = 5000;
 const QString MainWindow::MESSAGE_CONTENT = "Dota Auto Queue has found and accepted a game!";
 const QString MainWindow::MESSAGE_ERROR = "Dota Auto Queue has encountered an error and stopped!";
@@ -46,6 +49,8 @@ MainWindow::MainWindow(QWidget *parent)
           queueAction(nullptr), queueTimer(nullptr) {
     ui->setupUi(this);
 
+    setWindowIcon(QIcon(":/resources/DotaAutoQueue.png"));
+
     networkManager = new QNetworkAccessManager(this);
 
     appSettings = new QSettings("DotaAutoQueue", "DotaAutoQueue", this);
@@ -54,12 +59,78 @@ MainWindow::MainWindow(QWidget *parent)
     createQueueProcess();
     createForm();
 
+    connect(ui->actionHome_page, &QAction::triggered, this, &MainWindow::openHomePage);
+    connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::showAbout);
+    connect(ui->actionCheck_For_Update, &QAction::triggered, this, &MainWindow::updateCheck);
+    connect(ui->actionQuit, &QAction::triggered, this, &QApplication::quit);
+
     updateLabels();
 }
 
 MainWindow::~MainWindow() {
     appSettings->setValue("discordWebhook", ui->discordWebhookEdit->text());
     delete ui;
+}
+
+void MainWindow::updateCheck() {
+    qDebug() << "Checking for updates";
+
+    QNetworkRequest request(REPO_API_URL);
+    request.setRawHeader("Accept", "application/vnd.github.v3+json");
+
+    QNetworkReply* reply = networkManager->get(request);
+
+    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        if (reply->error() != QNetworkReply::NoError) {
+            QMessageBox::critical(this, "Error", "Could not check for updates: " + reply->errorString());
+            reply->deleteLater();
+            return;
+        }
+
+        QByteArray responseData = reply->readAll();
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
+
+        if (!jsonDoc.isNull() && jsonDoc.isObject()) {
+            QJsonObject jsonObj = jsonDoc.object();
+            QString latestHash = jsonObj["commit"].toObject()["sha"].toString();
+
+            if (latestHash.startsWith(QString(GIT_HASH))) {
+                QMessageBox::information(this, "Update Check", "Your application is up to date.");
+            } else {
+                QMessageBox updateBox;
+                updateBox.setWindowTitle("Update Available");
+                updateBox.setText("There is an update available. Would you like to download it?");
+                updateBox.setIcon(QMessageBox::Information);
+                updateBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+                updateBox.setDefaultButton(QMessageBox::No);
+
+                if (updateBox.exec() == QMessageBox::Yes) {
+                    openHomePage();
+                }
+            }
+        } else {
+            QMessageBox::warning(this, "Error", "Could not parse the update information.");
+        }
+
+        reply->deleteLater();
+    });
+}
+
+void MainWindow::openHomePage() {
+    QUrl url(REPO_URL);
+    QDesktopServices::openUrl(url);
+}
+
+void MainWindow::showAbout() {
+    QMessageBox aboutBox;
+
+    aboutBox.setWindowTitle("About");
+    aboutBox.setText(QString("DotaAutoQueue\nAutomatically accept dota 2 games.\n\nVersion: %1\n").arg(QString(GIT_HASH)));
+
+    aboutBox.setIconPixmap(windowIcon().pixmap(48, 48));
+    aboutBox.setWindowIcon(QApplication::style()->standardIcon(QStyle::SP_MessageBoxInformation));
+
+    aboutBox.exec();
 }
 
 void MainWindow::createForm() {
@@ -72,7 +143,7 @@ void MainWindow::createForm() {
 void MainWindow::createTrayIcon() {
     qDebug("Creating tray icon");
 
-    QIcon trayIconImage = style()->standardIcon(QStyle::SP_ComputerIcon);
+    QIcon trayIconImage = windowIcon();
 
     trayIcon = new QSystemTrayIcon(trayIconImage, this);
 
@@ -359,8 +430,10 @@ void MainWindow::findDotaWindow() {
                  << "Type:" << windowType;
 
         // Find by name
-        if (info.name().toLower().contains(DOTA_WINDOW.toLower())
-            || info.visibleName().toLower().contains(DOTA_WINDOW.toLower())) {
+        //const bool match = info.name().toLower().contains(DOTA_WINDOW.toLower()) || info.visibleName().toLower().contains(DOTA_WINDOW.toLower());
+        const bool match = info.name().toLower() == DOTA_WINDOW.toLower();
+
+        if (match) {
             qDebug() << "Window found: " << id;
             dotaWindowId = id;
             return;
