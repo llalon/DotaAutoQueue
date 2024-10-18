@@ -6,6 +6,10 @@ Tired of waiting 15+ minutes to find a game of single draft in Dota 2? Wish you 
 
 Well now you can with DotaAutoQueue. Queue for games unattended and recieve push notifications to your phone when a game is found and accepted!
 
+#### Requirements
+
+Only the SteamDeck is supported.
+
 #### Installation
 
 Download the AppImage from [releases](https://github.com/llalon/DotaAutoQueue/releases/) or build from source:
