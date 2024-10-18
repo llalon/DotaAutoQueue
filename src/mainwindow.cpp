@@ -45,8 +45,9 @@ const QString MainWindow::MESSAGE_CONTENT = "Dota Auto Queue has found and accep
 const QString MainWindow::MESSAGE_ERROR = "Dota Auto Queue has encountered an error and stopped!";
 
 MainWindow::MainWindow(QWidget *parent)
-        : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(nullptr), restoreAction(nullptr), quitAction(nullptr),
-          queueAction(nullptr), queueTimer(nullptr) {
+    : QMainWindow(parent), ui(new Ui::MainWindow), trayIcon(nullptr), restoreAction(nullptr), quitAction(nullptr),
+      queueAction(nullptr), queueTimer(nullptr)
+{
     ui->setupUi(this);
 
     setWindowIcon(QIcon(":/resources/DotaAutoQueue.png"));
@@ -67,20 +68,23 @@ MainWindow::MainWindow(QWidget *parent)
     updateLabels();
 }
 
-MainWindow::~MainWindow() {
+MainWindow::~MainWindow()
+{
     appSettings->setValue("discordWebhook", ui->discordWebhookEdit->text());
     delete ui;
 }
 
-void MainWindow::updateCheck() {
+void MainWindow::updateCheck()
+{
     qDebug() << "Checking for updates";
 
     QNetworkRequest request(REPO_API_URL);
     request.setRawHeader("Accept", "application/vnd.github.v3+json");
 
-    QNetworkReply* reply = networkManager->get(request);
+    QNetworkReply *reply = networkManager->get(request);
 
-    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+    connect(reply, &QNetworkReply::finished, this, [this, reply]()
+            {
         if (reply->error() != QNetworkReply::NoError) {
             QMessageBox::critical(this, "Error", "Could not check for updates: " + reply->errorString());
             reply->deleteLater();
@@ -112,16 +116,17 @@ void MainWindow::updateCheck() {
             QMessageBox::warning(this, "Error", "Could not parse the update information.");
         }
 
-        reply->deleteLater();
-    });
+        reply->deleteLater(); });
 }
 
-void MainWindow::openHomePage() {
+void MainWindow::openHomePage()
+{
     QUrl url(REPO_URL);
     QDesktopServices::openUrl(url);
 }
 
-void MainWindow::showAbout() {
+void MainWindow::showAbout()
+{
     QMessageBox aboutBox;
 
     aboutBox.setWindowTitle("About");
@@ -133,14 +138,16 @@ void MainWindow::showAbout() {
     aboutBox.exec();
 }
 
-void MainWindow::createForm() {
+void MainWindow::createForm()
+{
     QString savedWebhook = appSettings->value("discordWebhook").toString();
     ui->discordWebhookEdit->setText(savedWebhook);
 
     connect(ui->queueButton, &QPushButton::clicked, this, &MainWindow::toggleQueue);
 }
 
-void MainWindow::createTrayIcon() {
+void MainWindow::createTrayIcon()
+{
     qDebug("Creating tray icon");
 
     QIcon trayIconImage = windowIcon();
@@ -165,17 +172,23 @@ void MainWindow::createTrayIcon() {
     trayIcon->show();
 }
 
-void MainWindow::closeEvent(QCloseEvent *event) {
-    if (trayIcon && trayIcon->isVisible()) {
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    if (trayIcon && trayIcon->isVisible())
+    {
         hide();
         event->ignore();
     }
 }
 
-void MainWindow::toggleWindowVisibility() {
-    if (isVisible()) {
+void MainWindow::toggleWindowVisibility()
+{
+    if (isVisible())
+    {
         hide();
-    } else {
+    }
+    else
+    {
         show();
         activateWindow();
         raise();
@@ -184,19 +197,26 @@ void MainWindow::toggleWindowVisibility() {
     updateLabels();
 }
 
-void MainWindow::updateLabels() {
-    if (isVisible()) {
+void MainWindow::updateLabels()
+{
+    if (isVisible())
+    {
         restoreAction->setText("Hide");
-    } else {
+    }
+    else
+    {
         restoreAction->setText("Show");
     }
 
-    if (queueTimer->isActive()) {
+    if (queueTimer->isActive())
+    {
         ui->queueButton->setText("Stop Queueing");
         queueAction->setText("Stop Queueing");
 
         ui->discordWebhookEdit->setDisabled(true);
-    } else {
+    }
+    else
+    {
         ui->queueButton->setText("Start Queueing");
         queueAction->setText("Start Queueing");
 
@@ -204,21 +224,27 @@ void MainWindow::updateLabels() {
     }
 }
 
-void MainWindow::createQueueProcess() {
+void MainWindow::createQueueProcess()
+{
     queueTimer = new QTimer(this);
 
     connect(queueTimer, &QTimer::timeout, this, &MainWindow::queueTick);
 }
 
-void MainWindow::toggleQueue(const bool gameFound) {
+void MainWindow::toggleQueue(const bool gameFound)
+{
     qDebug() << "Toggling queue mode";
 
-    if (queueTimer->isActive()) {
+    if (queueTimer->isActive())
+    {
         qDebug("Stopping Queue");
 
-        if (gameFound) {
+        if (gameFound)
+        {
             hide();
-        } else {
+        }
+        else
+        {
             show();
         }
 
@@ -227,11 +253,16 @@ void MainWindow::toggleQueue(const bool gameFound) {
         updateLabels();
 
         qDebug("Queuing stopped.");
-    } else {
+    }
+    else
+    {
         qDebug("Starting Queue");
-        try {
+        try
+        {
             findDotaWindow();
-        } catch (const std::runtime_error &e) {
+        }
+        catch (const std::runtime_error &e)
+        {
             qDebug() << "Error Finding dota window" << e.what();
             QMessageBox::warning(this, "Error", "Unable to find dota");
             return;
@@ -248,16 +279,19 @@ void MainWindow::toggleQueue(const bool gameFound) {
     }
 }
 
-void MainWindow::sendNotification(const QString &message) {
+void MainWindow::sendNotification(const QString &message)
+{
     QString discordWebHook = ui->discordWebhookEdit->text().trimmed();
     QUrl discordWebHookUrl = (QUrl(discordWebHook));
 
-    if (discordWebHook.isEmpty()) {
+    if (discordWebHook.isEmpty())
+    {
         qDebug() << "Skipping: Webhook URL is empty.";
         return;
     }
 
-    if (!discordWebHookUrl.isValid()) {
+    if (!discordWebHookUrl.isValid())
+    {
         qDebug() << "Error: Invalid webhook URL.";
         return;
     }
@@ -275,17 +309,18 @@ void MainWindow::sendNotification(const QString &message) {
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QNetworkReply *reply = networkManager->post(request, postData);
 
-    connect(reply, &QNetworkReply::finished, [=]() {
+    connect(reply, &QNetworkReply::finished, [=]()
+            {
         if (reply->error() != QNetworkReply::NoError) {
             qDebug() << "Error:" << reply->errorString();
         } else {
             qDebug() << "Message sent successfully!";
         }
-        reply->deleteLater();
-    });
+        reply->deleteLater(); });
 }
 
-cv::Mat MainWindow::loadImage() const {
+cv::Mat MainWindow::loadImage() const
+{
     qDebug("Loading screen and image");
 
     // Get the QScreen instance
@@ -298,7 +333,7 @@ cv::Mat MainWindow::loadImage() const {
     qDebug("Capturing window");
     QPixmap windowPixmap = screen->grabWindow(dotaWindowId);
     QImage windowImage = windowPixmap.toImage();
-    cv::Mat originalImage(windowImage.height(), windowImage.width(), CV_8UC4, (uchar *) windowImage.bits(),
+    cv::Mat originalImage(windowImage.height(), windowImage.width(), CV_8UC4, (uchar *)windowImage.bits(),
                           windowImage.bytesPerLine());
 
     // Debug PREVIEW
@@ -322,7 +357,8 @@ cv::Mat MainWindow::loadImage() const {
     return scaledImage;
 }
 
-bool MainWindow::testForGame(const cv::Mat &scaledImage) {
+bool MainWindow::testForGame(const cv::Mat &scaledImage)
+{
     qDebug() << "Testing image";
 
     // Crop coordinates (based on 1920x1080)
@@ -383,41 +419,51 @@ bool MainWindow::testForGame(const cv::Mat &scaledImage) {
     return textResult.find("ACCEPT") != std::string::npos;
 }
 
-void MainWindow::queueTick() {
+void MainWindow::queueTick()
+{
     qInfo("Checking for game");
 
-    try {
+    try
+    {
         const cv::Mat image = loadImage();
 
-        if (image.empty()) {
+        if (image.empty())
+        {
             throw std::runtime_error("Failed to load screen image");
         }
 
         const bool gameAcceptable = testForGame(image);
 
-        if (gameAcceptable) {
+        if (gameAcceptable)
+        {
             qInfo("Found game");
             acceptGame();
             sendNotification(MESSAGE_CONTENT);
 
             // Stop queue
             toggleQueue(true);
-        } else {
+        }
+        else
+        {
             qDebug("Not game found");
         }
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         qDebug() << "Error in queue tick: " << e.what();
         QMessageBox::critical(this, "Error", "Error encountered during queueing");
         sendNotification(MESSAGE_ERROR);
     }
 }
 
-void MainWindow::findDotaWindow() {
+void MainWindow::findDotaWindow()
+{
     qDebug("Finding dota 2 window");
 
     QList<WId> windowIds = KX11Extras::windows();
 
-    for (WId id: windowIds) {
+    for (WId id : windowIds)
+    {
         KWindowInfo info(id, NET::WMName | NET::WMVisibleName | NET::WMState | NET::WMWindowType);
 
         QString windowName = info.name();
@@ -430,10 +476,11 @@ void MainWindow::findDotaWindow() {
                  << "Type:" << windowType;
 
         // Find by name
-        //const bool match = info.name().toLower().contains(DOTA_WINDOW.toLower()) || info.visibleName().toLower().contains(DOTA_WINDOW.toLower());
+        // const bool match = info.name().toLower().contains(DOTA_WINDOW.toLower()) || info.visibleName().toLower().contains(DOTA_WINDOW.toLower());
         const bool match = info.name().toLower() == DOTA_WINDOW.toLower();
 
-        if (match) {
+        if (match)
+        {
             qDebug() << "Window found: " << id;
             dotaWindowId = id;
             return;
@@ -443,7 +490,8 @@ void MainWindow::findDotaWindow() {
     throw std::runtime_error("Dota window not found.");
 }
 
-void MainWindow::acceptGame() const {
+void MainWindow::acceptGame() const
+{
     qDebug("Accepting game");
 
     qDebug("Setting window active");
@@ -452,14 +500,16 @@ void MainWindow::acceptGame() const {
 
     // Get the geometry of the Dota window to find button
     Display *const display = XOpenDisplay(nullptr);
-    if (display == nullptr) {
+    if (display == nullptr)
+    {
         throw std::runtime_error("Unable to open X display");
     }
 
     const Window dotaWindow = dotaWindowId;
 
     XWindowAttributes windowAttributes;
-    if (!XGetWindowAttributes(display, dotaWindow, &windowAttributes)) {
+    if (!XGetWindowAttributes(display, dotaWindow, &windowAttributes))
+    {
         XCloseDisplay(display);
         throw std::runtime_error("Failed to get window attributes");
     }
