@@ -8,17 +8,23 @@ Well now you can with DotaAutoQueue. Queue for games unattended and recieve push
 
 #### Installation
 
-Download the AppImage from releases or build from source
-
-#### Build
-
-The following packages are required:
+Download the AppImage from releases or build from source:
 
 ```
-sudo pacman -S qt5-base qt5-x11extras kwindowsystem libx11 libxtst libxi opencv tesseract gcc pkgconf fmt vtk hdf5
-```
+sudo pacman -S qt5-base \
+    qt5-x11extras \
+    kwindowsystem \
+    libx11 \
+    libxtst \
+    libxi \
+    opencv \
+    tesseract \
+    gcc \
+    pkgconf \
+    fmt \
+    vtk \
+    hdf5
 
-```
 qmake
 make
 make install
