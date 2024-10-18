@@ -9,13 +9,15 @@
 #include <opencv2/opencv.hpp>
 
 QT_BEGIN_NAMESPACE
-namespace Ui {
+namespace Ui
+{
     class MainWindow;
 }
 QT_END_NAMESPACE
 
-class MainWindow final : public QMainWindow {
-Q_OBJECT
+class MainWindow final : public QMainWindow
+{
+    Q_OBJECT
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
@@ -65,10 +67,18 @@ private:
 
     void updateLabels();
 
+    void openHomePage();
+
+    void showAbout();
+
+    void updateCheck();
+
     static const int POLL_INTERVAL_MS;
     static const QString MESSAGE_CONTENT;
     static const QString MESSAGE_ERROR;
     static const QString DOTA_WINDOW;
+    static const QString REPO_URL;
+    static const QString REPO_API_URL;
 };
 
 #endif // MAINWINDOW_H

@@ -77,3 +77,7 @@ CMakeLists.txt.user*
 moc_predefs.h
 DotaAutoQueue
 DotaAutoQueue.app
+/.qtc_clangd
+/.vscode
+/target
+*.AppImage

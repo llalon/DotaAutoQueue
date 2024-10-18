@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/DotaAutoQueue.png</file>
+    </qresource>
+</RCC>
