@@ -7,6 +7,7 @@
 #include <QCloseEvent>
 #include <QSystemTrayIcon>
 #include <QMenu>
+#include <QThread>
 #include <QStyle>
 #include <QTimer>
 #include <QNetworkAccessManager>
@@ -336,13 +337,6 @@ cv::Mat MainWindow::loadImage() const
     cv::Mat originalImage(windowImage.height(), windowImage.width(), CV_8UC4, (uchar *)windowImage.bits(),
                           windowImage.bytesPerLine());
 
-    // Debug PREVIEW
-    // cv::namedWindow("Screenshot Preview", cv::WINDOW_NORMAL);
-    // cv::resizeWindow("Screenshot Preview", originalImage.cols, originalImage.rows);
-    // cv::imshow("Screenshot Preview", originalImage);
-    // cv::waitKey(0);
-    // cv::destroyWindow("Screenshot Preview");
-
     qDebug("Scaling image");
     const auto scaleWidth = 1920.0;
     const auto scaleHeight = 1080.0;
@@ -365,12 +359,12 @@ bool MainWindow::testForGame(const cv::Mat &scaledImage)
     const int width = 1920;
     const int height = 1080;
 
-    // Calculate coordinates for a rectangle centered in the image of size 400x200
-    const int rectWidth = 400;
-    const int rectHeight = 200;
+    // Calculate coordinates for a rectangle centered in the image of size 200x50
+    const int rectWidth = 200;
+    const int rectHeight = 50;
 
     const int centerX = width / 2;
-    const int centerY = height / 2;
+    const int centerY = (height / 2) - (rectHeight / 2);
     const int rectTopLeftX = centerX - rectWidth / 2;
     const int rectTopLeftY = centerY - rectHeight / 2;
     const int rectBottomRightX = centerX + rectWidth / 2;
@@ -388,11 +382,13 @@ bool MainWindow::testForGame(const cv::Mat &scaledImage)
     cropRegion &= cv::Rect(0, 0, scaledImage.cols, scaledImage.rows);
     cv::Mat croppedImage = scaledImage(cropRegion).clone(); // Ensure copy
 
-    // cv::namedWindow("Screenshot Preview", cv::WINDOW_NORMAL);
-    // cv::resizeWindow("Screenshot Preview", croppedImage.cols, croppedImage.rows);
-    // cv::imshow("Screenshot Preview", croppedImage);
-    // cv::waitKey(0);
-    // cv::destroyWindow("Screenshot Preview");
+    // DEBUG VIEW IMAGE
+    //     cv::namedWindow("Screenshot Preview", cv::WINDOW_NORMAL);
+    //     cv::resizeWindow("Screenshot Preview", croppedImage.cols, croppedImage.rows);
+    //     cv::imshow("Screenshot Preview", croppedImage);
+    //     cv::waitKey(0);
+    //     cv::destroyWindow("Screenshot Preview");
+    // END DEBUG VIEW IMAGE
 
     // Preoptimize image for detection
     qDebug("Preprocessing image");
@@ -475,8 +471,8 @@ void MainWindow::findDotaWindow()
                  << "Visible Name:" << visibleName
                  << "Type:" << windowType;
 
-        // Find by name
-        // const bool match = info.name().toLower().contains(DOTA_WINDOW.toLower()) || info.visibleName().toLower().contains(DOTA_WINDOW.toLower());
+        // Find by name"
+        // const bool match = info.name().toLower().contains("feh");
         const bool match = info.name().toLower() == DOTA_WINDOW.toLower();
 
         if (match)
@@ -517,18 +513,50 @@ void MainWindow::acceptGame() const
     // Calculate the center coordinates
     // This is where button is
     const int windowCenterX = windowAttributes.x + windowAttributes.width / 2;
-    const int windowCenterY = windowAttributes.y + windowAttributes.height / 2;
+    const int windowCenterY = (windowAttributes.y + windowAttributes.height / 2) - 25;
 
+    XSetInputFocus(display, dotaWindow, RevertToPointerRoot, CurrentTime);
+
+    // Move cursor (not teleport)
     qDebug() << "Moving cursor to window center:"
              << "X:" << windowCenterX << ", Y:" << windowCenterY;
-    XWarpPointer(display, None, dotaWindow, 0, 0, 0, 0, windowCenterX, windowCenterY);
 
+    // Teleport cursor to a position 500 pixels below the target then slowly move it up to trigger the accept dialog properly.
+    // It doesn't work if the move is brought onto it like a human would...
+    const int teleportY = windowCenterY + 500;
+
+    XWarpPointer(display, None, dotaWindow, 0, 0, 0, 0, windowCenterX, teleportY);
+    XFlush(display);
+
+    const int steps = 50;
+    for (int i = 0; i <= steps; ++i)
+    {
+        int y = teleportY + (windowCenterY - teleportY) * i / steps;
+
+        XWarpPointer(display, None, dotaWindow, 0, 0, 0, 0, windowCenterX, y);
+        XFlush(display);
+        QThread::msleep(10);
+    }
+
+    // Sleep before clicking
+    QThread::msleep(500);
+
+    // Click and accept the game
     qDebug("Clicking cursor in window center");
-    XTestFakeButtonEvent(display, Button1, True, CurrentTime);
-    XTestFakeButtonEvent(display, Button1, False, CurrentTime);
+    const auto press = XTestFakeButtonEvent(display, Button1, True, 500);
+    qDebug() << "Pressed: " << press;
+
+    const auto release = XTestFakeButtonEvent(display, Button1, False, 500);
+    qDebug() << "Released: " << release;
 
     XFlush(display);
     XCloseDisplay(display);
+
+    // Error if we couldn't press the screen!
+    if (press + release != 2)
+    {
+        throw std::runtime_error("Failed to click accept");
+    }
 
     qDebug("Game accepted");
 }
