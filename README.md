@@ -8,7 +8,7 @@ Well now you can with DotaAutoQueue. Queue for games unattended and recieve push
 
 #### Installation
 
-Download the AppImage from releases or build from source:
+Download the AppImage from [releases](https://github.com/llalon/DotaAutoQueue/releases/) or build from source:
 
 ```
 sudo pacman -S qt5-base \
